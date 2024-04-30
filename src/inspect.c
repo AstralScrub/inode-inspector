@@ -150,7 +150,6 @@ void argsHandler(int argc, char * argv[])
 
 void printText()
 {
-    
     printf("Information for %s:\n", fileName);
     printf("File Inode: %lu\n", fileInfo.st_ino);
     printf("Premission: ");
@@ -213,10 +212,47 @@ void printText()
     printf("Last Access Time: %ld\n", fileInfo.st_atime);
     printf("Last Modification Time: %ld\n", fileInfo.st_mtime);
     printf("Last Status Change Time: %ld\n", fileInfo.st_ctime);
-
 }
 
 void printJson()
 {
-    
+    printf("{\n");
+    printf("\t\"filePath\": \"%s\",\n", fileName);
+    printf("\t\"inode\": {\n");
+    printf("\t\t\"number\":           %lu,\n", fileInfo.st_ino);
+    printf("\t\t\"type\":             \"");
+        if (S_ISREG(fileInfo.st_mode))
+            printf("regular file\",\n");
+        else if (S_ISDIR(fileInfo.st_mode))
+            printf("directory\",\n");
+        else if (S_ISCHR(fileInfo.st_mode))
+            printf("character device\",\n");
+        else if (S_ISBLK(fileInfo.st_mode))
+            printf("block device\",\n");
+        else if (S_ISFIFO(fileInfo.st_mode))
+            printf("FIFO (named pipe)\",\n");
+        else if (S_ISLNK(fileInfo.st_mode))
+            printf("symbolic link\",\n");
+        else if (S_ISSOCK(fileInfo.st_mode))
+            printf("socket\",\n");
+        else
+            printf("unknown?\",\n");
+    printf("\t\t\"permissions\":      \"");
+        if(S_IRUSR&fileInfo.st_mode)    printf("r");    else    printf("-");
+        if(S_IWUSR&fileInfo.st_mode)    printf("w");    else    printf("-");
+        if(S_IXUSR&fileInfo.st_mode)    printf("x");    else    printf("-");
+        if(S_IRGRP&fileInfo.st_mode)    printf("r");    else    printf("-");
+        if(S_IRGRP&fileInfo.st_mode)    printf("w");    else    printf("-");
+        if(S_IRGRP&fileInfo.st_mode)    printf("x");    else    printf("-");
+        if(S_IROTH&fileInfo.st_mode)    printf("r");    else    printf("-");
+        if(S_IROTH&fileInfo.st_mode)    printf("w");    else    printf("-");
+        if(S_IROTH&fileInfo.st_mode)    printf("x");    else    printf("-");
+        printf("\",\n");
+    printf("\t\t\"linkCount\":        %lu,\n", fileInfo.st_nlink);
+    printf("\t\t\"size\":             %lu,\n", fileInfo.st_size);
+    printf("\t\t\"accessTime\":       %ld,\n", fileInfo.st_atime);
+    printf("\t\t\"modificationTime\": %ld,\n", fileInfo.st_mtime);
+    printf("\t\t\"statusChangeTime\": %ld,\n", fileInfo.st_ctime);
+    printf("\t}\n");
+    printf("}\n");
 }
