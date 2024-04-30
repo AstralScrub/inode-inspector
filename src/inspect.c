@@ -323,13 +323,13 @@ int setupLogFile()
 
 int checkForFlags(char * arg)
 {
-    return  !(  strcmp(arg, "-i")   ||  strcmp(arg, "--inode")  ||
-                strcmp(arg, "-?")   ||  strcmp(arg, "--help")   ||
-                strcmp(arg, "-a")   ||  strcmp(arg, "--all")    ||
-                strcmp(arg, "-h")   ||  strcmp(arg, "--human")  ||
-                strcmp(arg, "-f")   ||  strcmp(arg, "--format") ||
-                strcmp(arg, "-l")   ||  strcmp(arg, "--log")    
-            );
+    return  1 && !( strcmp(arg, "-i")   ||  strcmp(arg, "--inode")  ||
+                    strcmp(arg, "-?")   ||  strcmp(arg, "--help")   ||
+                    strcmp(arg, "-a")   ||  strcmp(arg, "--all")    ||
+                    strcmp(arg, "-h")   ||  strcmp(arg, "--human")  ||
+                    strcmp(arg, "-f")   ||  strcmp(arg, "--format") ||
+                    strcmp(arg, "-l")   ||  strcmp(arg, "--log")    
+                );
 }
 
 void logMsg(char * msg)
