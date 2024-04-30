@@ -16,9 +16,13 @@ char * fileName;
 int selectionMode;
 int humanReadable;
 int format;
+int logMode;
 
 void argsHandler(int argc, char * argv[]);
 void help(int argc, char * argv[]);
+void printText();
+void printJson();
+
 
 int main(int argc, char *argv[]) {
     
@@ -31,27 +35,161 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     
+    if (format == FORMAT_TEXT)
+        printText();
+    if (format == FORMAT_JSON)
+        printJson();
+    
+    return 0;
+}
+
+void help(int argc, char * argv[])
+{
+    printf("%s: %s [-? | -i <file_path> | -a [directory_path]] [-a | -f [text|json]] [-l]\n", argv[0], argv[0]);
+}
+
+void argsHandler(int argc, char * argv[])
+{
+    if (argc == 1)
+    {
+        help(argc, argv);
+        exit(0);
+    }
+    else if (argc == 2)
+    {
+        format = FORMAT_TEXT;
+        selectionMode = SELECTION_SINGLE;
+        fileName = argv[1];
+    }
+    else
+    {
+        format = FORMAT_TEXT;
+        fileName = argv[0];
+        
+        for (int i = 1; i < argc; i++)
+        {
+            int validPostArg = 0;
+            
+            if (strcmp(argv[i], "-?") == 0)
+            {
+                help(argc, argv);
+                exit(0);
+            }
+            else if (strcmp(argv[i], "-i") == 0)
+            {
+                selectionMode = SELECTION_SINGLE;
+                if (i + 1 < argc)
+                {
+                    fileName = argv[i+1];
+                    validPostArg++;
+                }
+            } 
+            else if (strcmp(argv[i], "-a") == 0)
+            {
+                printf("a\n");
+                selectionMode = SELECTION_SINGLE;
+                if (i + 1 < argc)
+                {
+                    fileName = argv[i+1];
+                    validPostArg++;
+                }
+                if (i + 2 < argc)
+                {
+                    if (strcmp(argv[i+2], "-r"))
+                    {
+                        selectionMode = SELECTION_RECURSIVE;
+                        validPostArg++;
+                    }
+                }
+            }
+            else if (strcmp(argv[i], "-h") == 0)
+            {
+                humanReadable = 1;
+            }
+            else if (strcmp(argv[i], "-f") == 0)
+            {
+                if(i+1 < argc)
+                {
+                    if (strcmp(argv[i+1], "json") == 0)
+                    {
+                        format = FORMAT_JSON;
+                        validPostArg++;
+                    }
+                    else if (strcmp(argv[i+1], "text") == 0)
+                    {
+                        format = FORMAT_TEXT;
+                        validPostArg++;
+                    }
+                    else
+                    {
+                        printf("Enter \"text\" or \"json\" after \"-f\"/\"--format\"\n");
+                        exit(1);
+                    }
+                }
+                else
+                {
+                    printf("Enter \"text\" or \"json\" after \"-f\"/\"--format\"\n");
+                    exit(1);
+                }
+            }
+            
+            else if (strcmp(argv[i], "-l") == 0)
+            {
+                
+                if (i+1 < argc)
+                {
+                    logMode = 1;
+                    validPostArg++;
+                }
+            }
+            
+            i += validPostArg;
+        }
+    }
+}
+
+void printText()
+{
+    
     printf("Information for %s:\n", fileName);
     printf("File Inode: %lu\n", fileInfo.st_ino);
     printf("Premission: ");
     if(S_IRUSR&fileInfo.st_mode)
-        printf("r-");
+        printf("r");
+    else
+        printf("-");
     if(S_IWUSR&fileInfo.st_mode)
-        printf("w-");
+        printf("w");
+    else
+        printf("-");
     if(S_IXUSR&fileInfo.st_mode)
-        printf("x-");
+        printf("x");
+    else
+        printf("-");
     if(S_IRGRP&fileInfo.st_mode)
-        printf("r--");
+        printf("r");
+    else
+        printf("-");
     if(S_IRGRP&fileInfo.st_mode)
-        printf("w--");
+        printf("w");
+    else
+        printf("-");
     if(S_IRGRP&fileInfo.st_mode)
-        printf("x--");
+        printf("x");
+    else
+        printf("-");
     if(S_IROTH&fileInfo.st_mode)
-        printf("r---");
+        printf("r");
+    else
+        printf("-");
     if(S_IROTH&fileInfo.st_mode)
-        printf("w---");
+        printf("w");
+    else
+        printf("-");
     if(S_IROTH&fileInfo.st_mode)
-        printf("x---");
+        printf("x");
+    else
+        printf("-");
     printf("\n");
     printf("File Type: ");
     if (S_ISREG(fileInfo.st_mode))
@@ -70,66 +208,15 @@ int main(int argc, char *argv[]) {
         printf("socket\n");
     else
         printf("unknown?\n");
-
-    
     printf("Number of Hard Links: %lu\n", fileInfo.st_nlink);
     printf("File Size: %lu bytes\n", fileInfo.st_size);
     printf("Last Access Time: %ld\n", fileInfo.st_atime);
     printf("Last Modification Time: %ld\n", fileInfo.st_mtime);
     printf("Last Status Change Time: %ld\n", fileInfo.st_ctime);
 
-    return 0;
 }
 
-void help(int argc, char * argv[])
+void printJson()
 {
-    printf("%s: %s [-? | -i <file_path> | -a [directory_path]] [-a | -f [text|json]] [-l]\n", argv[0], argv[0]);
-}
-
-void argsHandler(int argc, char * argv[])
-{
-    if (argc == 1)
-    {
-        help(argc, argv);
-        exit(1);
-    }
-    else if (argc == 2)
-    {
-        format = FORMAT_TEXT;
-        selectionMode = SELECTION_SINGLE;
-        fileName = argv[1];
-    }
-    else
-    {
-        format = -1;
-        selectionMode = -1;
-        fileName = argv[0];
-        
-        for (int i = 1; i < argc; i++)
-        {
-            char * arg = argv[i];
-            if (strcmp(arg, "-i") == 0)
-            {
-                printf("i\n");
-                selectionMode = SELECTION_SINGLE;
-                if (i + 1 < argc)
-                    fileName = argv[i+1];
-            } 
-            else if (strcmp(arg, "-a") == 0)
-            {
-                printf("a\n");
-                selectionMode = SELECTION_SINGLE;
-                fileName = argv[i+1];
-
-                if (i + 2 < argc)
-                {
-                    if (strcmp(argv[i+2], "-r"))
-                    {
-                        selectionMode = SELECTION_RECURSIVE;
-                    }
-                }
-            }
-            
-        }
-    }
+    
 }
