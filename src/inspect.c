@@ -288,6 +288,7 @@ int setupLogFile()
     
     logMsg("  log file is ready\n");
     logReady = 1;
+    free(logBuffer);
 
     return 0;
 }
