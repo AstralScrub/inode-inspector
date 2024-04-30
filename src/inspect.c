@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #define SELECTION_SINGLE    (0)
 #define SELECTION_ALL       (1)
@@ -13,6 +14,7 @@
 #define FORMAT_TEXT         (1)
 
 struct stat fileInfo;
+struct tm * timeInfo;
 char * fileName;
 int selectionMode;
 int humanReadable;
@@ -22,7 +24,7 @@ FILE * logFile;
 char * logFileName;
 int logReady;
 
-char * logBuffer;
+char buffer[32768];
 
 void argsHandler(int argc, char * argv[]);
 void help(int argc, char * argv[]);
@@ -35,7 +37,7 @@ void logMsg(char * msg);
 int main(int argc, char *argv[]) 
 {    
     logReady = 0;
-    logBuffer = (char *) malloc(sizeof(char) * 32768);
+    //buffer = (char *) malloc(sizeof(char) * 32768);
     logMsg("start of buffer\n");
     
     argsHandler(argc, argv);
@@ -43,7 +45,7 @@ int main(int argc, char *argv[])
     if (logMode)
     {
         setupLogFile();
-        logMsg(logBuffer);
+        logMsg(buffer);
     }
 
     if (fileName == NULL)
@@ -67,9 +69,10 @@ int main(int argc, char *argv[])
 
 void help(int argc, char * argv[])
 {
-
+    printf("\n\n");
     printf("inspect: inspect [-? | -i <file_path> | -a [directory_path]] [-h]              \n");
     printf("             [-f [text|json]] [-l <log_file_path>]                             \n");
+    printf("\n\n");
     printf("    -?              Prints this message                                        \n");
     printf("    -i --inode      Dictates the file whose inode information is displayed     \n");
     printf("    -a --all        Dictates that all files in the directory will have their   \n");
@@ -88,6 +91,7 @@ void argsHandler(int argc, char * argv[])
     if (argc == 1)
     {
         help(argc, argv);
+        exit(0);
     }
     else if (argc == 2)
     {
@@ -109,7 +113,7 @@ void argsHandler(int argc, char * argv[])
     }
     else
     {
-        strcat(logBuffer, "  Handling program arguments\n");
+        strcat(buffer, "  Handling program arguments\n");
         format = FORMAT_TEXT;
         
         for (int i = 1; i < argc; i++)
@@ -233,9 +237,13 @@ void argsHandler(int argc, char * argv[])
 
 void printText()
 {
-    printf("Information for: %s\n", fileName);
-    printf("File Inode: %lu\n", fileInfo.st_ino);
-    printf("Premission: ");
+    printf("Information for:          %s\n", fileName);
+    
+    
+    printf("File Inode:               %lu\n", fileInfo.st_ino);
+    
+    
+    printf("Premission:               ");
         if(S_IRUSR&fileInfo.st_mode)    printf("r");    else    printf("-");
         if(S_IWUSR&fileInfo.st_mode)    printf("w");    else    printf("-");
         if(S_IXUSR&fileInfo.st_mode)    printf("x");    else    printf("-");
@@ -246,7 +254,9 @@ void printText()
         if(S_IROTH&fileInfo.st_mode)    printf("w");    else    printf("-");
         if(S_IROTH&fileInfo.st_mode)    printf("x");    else    printf("-");
         printf("\n");
-    printf("File Type: ");
+    
+    
+    printf("File Type:                ");
         if (S_ISREG(fileInfo.st_mode))          printf("regular file");
         else if (S_ISDIR(fileInfo.st_mode))     printf("directory");
         else if (S_ISCHR(fileInfo.st_mode))     printf("character device");
@@ -256,13 +266,90 @@ void printText()
         else if (S_ISSOCK(fileInfo.st_mode))    printf("socket");
         else                                    printf("unknown?");
         printf("\n");
-    printf("Number of Hard Links: %lu\n", fileInfo.st_nlink);
-    printf("User ID: %d\n", fileInfo.st_uid);
-    printf("Group ID: %d\n", fileInfo.st_gid);
-    printf("File Size: %lu bytes\n", fileInfo.st_size);
-    printf("Last Access Time: %ld\n", fileInfo.st_atime);
-    printf("Last Modification Time: %ld\n", fileInfo.st_mtime);
-    printf("Last Status Change Time: %ld\n", fileInfo.st_ctime);
+    
+    
+    printf("Number of Hard Links:     %lu\n", fileInfo.st_nlink);
+    
+    
+    printf("User ID:                  %d\n", fileInfo.st_uid);
+    
+    
+    printf("Group ID:                 %d\n", fileInfo.st_gid);
+    
+    
+    printf("File Size:                ");
+    long size = fileInfo.st_size;
+    int sizeTier = 0;
+    if (humanReadable)
+    {
+        double fileSize = size;
+        while (fileSize > 1024)
+        {
+            fileSize /= 1024;
+            sizeTier++;
+        }
+        printf("%.2f", fileSize);
+        switch(sizeTier)
+        {
+            default:
+            case 0:
+                printf(" bytes");
+                break;
+            case 1:
+                printf(" K");
+                break;
+            case 2:
+                printf(" M");
+                break;
+            case 3:
+                printf(" G");
+                break;
+            case 4:
+                printf(" P");
+                break;
+        }
+        printf("\n");
+    }
+    else
+    {
+        printf("%lu bytes\n", fileInfo.st_size);
+    }
+    
+    
+    printf("Last Access Time:         ");
+    if (humanReadable)
+    {
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localtime(&fileInfo.st_atime));
+        printf("%s\n", buffer);
+    }
+    else
+    {
+        printf("%ld\n", fileInfo.st_atime);
+    }
+    
+    
+    printf("Last Modification Time:   ");
+    if (humanReadable)
+    {
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localtime(&fileInfo.st_mtime));
+        printf("%s\n", buffer);
+    }
+    else
+    {
+        printf("%ld\n", fileInfo.st_mtime);
+    }
+    
+    
+    printf("Last Status Change Time:  ");
+    if (humanReadable)
+    {
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localtime(&fileInfo.st_ctime));
+        printf("%s\n", buffer);
+    }
+    else
+    {
+        printf("%ld\n", fileInfo.st_ctime);
+    }
 }
 
 void printJson()
@@ -316,7 +403,7 @@ int setupLogFile()
     
     logMsg("  log file is ready\n");
     logReady = 1;
-    free(logBuffer);
+    //free(buffer);
 
     return 0;
 }
@@ -336,7 +423,7 @@ void logMsg(char * msg)
 {
     if (! logReady)
     {
-        strcat(logBuffer, msg);
+        strcat(buffer, msg);
     }
     else if (logMode)
     {
