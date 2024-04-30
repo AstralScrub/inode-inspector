@@ -145,7 +145,7 @@ void argsHandler(int argc, char * argv[])
                 
                 if (i+1 < argc)
                 {
-                    if (checkForFlags(argv[i+1]) == 0)
+                    if (checkForFlags(argv[i+1]))
                     {
                         logMsg("      invalid post argument");
                         printf("Invalid post argument after \"-h\" / \"-human\" flag\n");
