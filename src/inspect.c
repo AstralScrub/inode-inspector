@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 #define SELECTION_SINGLE    (0)
 #define SELECTION_ALL       (1)
@@ -17,18 +18,34 @@ int selectionMode;
 int humanReadable;
 int format;
 int logMode;
+FILE * logFile;
+char * logFileName;
+int logReady;
+
+char * logBuffer;
 
 void argsHandler(int argc, char * argv[]);
 void help(int argc, char * argv[]);
 void printText();
 void printJson();
+int setupLogFile();
+int checkForFlags(char * arg);
+void logMsg(char * msg);
 
-
-int main(int argc, char *argv[]) {
-    
+int main(int argc, char *argv[]) 
+{    
+    logReady = 0;
+    logBuffer = (char *) malloc(sizeof(char) * 32768);
+    logMsg("start of buffer\n");
     
     argsHandler(argc, argv);
     
+    if (logMode)
+    {
+        setupLogFile();
+        logMsg(logBuffer);
+    }
+
     if (stat(fileName, &fileInfo) != 0) 
     {
         fprintf(stderr, "Error getting file info for %s: %s\n", argv[1], strerror(errno));
@@ -53,7 +70,6 @@ void argsHandler(int argc, char * argv[])
     if (argc == 1)
     {
         help(argc, argv);
-        exit(0);
     }
     else if (argc == 2)
     {
@@ -63,6 +79,7 @@ void argsHandler(int argc, char * argv[])
     }
     else
     {
+        strcat(logBuffer, "  Handling program arguments\n");
         format = FORMAT_TEXT;
         fileName = argv[0];
         
@@ -72,22 +89,39 @@ void argsHandler(int argc, char * argv[])
             
             if (strcmp(argv[i], "-?") == 0)
             {
+                logMsg("    help flag detected\n");
                 help(argc, argv);
-                exit(0);
             }
-            else if (strcmp(argv[i], "-i") == 0)
+            else if (   strcmp(argv[i], "-i") == 0 ||  
+                        strcmp(argv[i], "--inode") == 0)
             {
+                logMsg("    inode flag detected\n");
+             
                 selectionMode = SELECTION_SINGLE;
                 if (i + 1 < argc)
                 {
-                    fileName = argv[i+1];
-                    validPostArg++;
+                    if (checkForFlags(argv[i+1]))
+                    {
+                        logMsg("      detected flag immediately after \"-i\"");
+                        
+                    }
+                    else
+                    {
+                        fileName = argv[i+1];
+                        validPostArg++;
+                    }
+                }
+                else
+                {
+                    printf("      no file after inode flag\n");
+                    
                 }
             } 
             else if (strcmp(argv[i], "-a") == 0)
             {
-                printf("a\n");
-                selectionMode = SELECTION_SINGLE;
+                logMsg("    all flag detected\n");
+             
+                selectionMode = SELECTION_ALL;
                 if (i + 1 < argc)
                 {
                     fileName = argv[i+1];
@@ -97,6 +131,8 @@ void argsHandler(int argc, char * argv[])
                 {
                     if (strcmp(argv[i+2], "-r"))
                     {
+                        logMsg("    recursive flag detected\n");
+             
                         selectionMode = SELECTION_RECURSIVE;
                         validPostArg++;
                     }
@@ -104,31 +140,50 @@ void argsHandler(int argc, char * argv[])
             }
             else if (strcmp(argv[i], "-h") == 0)
             {
+                logMsg("    human readable flag detected\n");
                 humanReadable = 1;
+                
+                if (i+1 < argc)
+                {
+                    if (checkForFlags(argv[i+1]) == 0)
+                    {
+                        logMsg("      invalid post argument");
+                        printf("Invalid post argument after \"-h\" / \"-human\" flag\n");
+                        printf("There must not be a post argument after flag\n");
+                        exit(1);
+                    }
+                }
             }
             else if (strcmp(argv[i], "-f") == 0)
             {
+                logMsg("    format flag detected\n");
                 if(i+1 < argc)
                 {
                     if (strcmp(argv[i+1], "json") == 0)
                     {
+                        logMsg("      json format\n");
                         format = FORMAT_JSON;
                         validPostArg++;
                     }
                     else if (strcmp(argv[i+1], "text") == 0)
                     {
+                        logMsg("      text format\n");
                         format = FORMAT_TEXT;
                         validPostArg++;
                     }
                     else
                     {
-                        printf("Enter \"text\" or \"json\" after \"-f\"/\"--format\"\n");
+                        logMsg("      invalid format\n");
+                        printf("Invalid format\n");
+                        printf("Enter \"text\" or \"json\" after \"-f\" / \"--format\" flag\n");
                         exit(1);
                     }
                 }
                 else
                 {
-                    printf("Enter \"text\" or \"json\" after \"-f\"/\"--format\"\n");
+                    logMsg("      missing format\n");
+                    printf("Missing format argument\n");
+                    printf("Enter \"text\" or \"json\" after \"-f\" / \"--format\" flag\n");
                     exit(1);
                 }
             }
@@ -138,11 +193,12 @@ void argsHandler(int argc, char * argv[])
                 
                 if (i+1 < argc)
                 {
+                    logMsg("    log flag detected\n");
+                    logFileName = argv[i+1];
                     logMode = 1;
                     validPostArg++;
                 }
             }
-            
             i += validPostArg;
         }
     }
@@ -150,7 +206,7 @@ void argsHandler(int argc, char * argv[])
 
 void printText()
 {
-    printf("Information for %s:\n", fileName);
+    printf("Information for: %s\n", fileName);
     printf("File Inode: %lu\n", fileInfo.st_ino);
     printf("Premission: ");
         if(S_IRUSR&fileInfo.st_mode)    printf("r");    else    printf("-");
@@ -174,6 +230,8 @@ void printText()
         else                                    printf("unknown?");
         printf("\n");
     printf("Number of Hard Links: %lu\n", fileInfo.st_nlink);
+    printf("User ID: %d\n", fileInfo.st_uid);
+    printf("Group ID: %d\n", fileInfo.st_gid);
     printf("File Size: %lu bytes\n", fileInfo.st_size);
     printf("Last Access Time: %ld\n", fileInfo.st_atime);
     printf("Last Modification Time: %ld\n", fileInfo.st_mtime);
@@ -208,10 +266,56 @@ void printJson()
         if(S_IROTH&fileInfo.st_mode)    printf("x");    else    printf("-");
         printf("\",\n");
     printf("\t\t\"linkCount\":        %lu,\n", fileInfo.st_nlink);
+    printf("\t\t\"uid\":              %d\n", fileInfo.st_uid);
+    printf("\t\t\"gid\":              %d\n", fileInfo.st_gid);
     printf("\t\t\"size\":             %lu,\n", fileInfo.st_size);
     printf("\t\t\"accessTime\":       %ld,\n", fileInfo.st_atime);
     printf("\t\t\"modificationTime\": %ld,\n", fileInfo.st_mtime);
     printf("\t\t\"statusChangeTime\": %ld,\n", fileInfo.st_ctime);
     printf("\t}\n");
     printf("}\n");
+}
+
+int setupLogFile()
+{
+    logFile = fopen(logFileName, "w+");
+    logMsg("log initialization start\n");
+    if (logFile == NULL)
+    {
+        printf("Unable to access log file");
+        return -1;
+    }
+    
+    logMsg("  log file is ready\n");
+    logReady = 1;
+
+    return 0;
+}
+
+int checkForFlags(char * arg)
+{
+    return  1 &&    !(  strcmp(arg, "-i")   ||  strcmp(arg, "--inode")  ||
+                        strcmp(arg, "-?")   ||  strcmp(arg, "--help")   ||
+                        strcmp(arg, "-a")   ||  strcmp(arg, "--all")    ||
+                        strcmp(arg, "-h")   ||  strcmp(arg, "--human")  ||
+                        strcmp(arg, "-f")   ||  strcmp(arg, "--format") ||
+                        strcmp(arg, "-l")   ||  strcmp(arg, "--log")    
+                    );
+}
+
+void logMsg(char * msg)
+{
+    if (! logReady)
+    {
+        strcat(logBuffer, msg);
+    }
+    else if (logMode)
+    {
+        fprintf(logFile, "%s", msg);
+    }
+}
+
+int checkFlag(char * a, char * b)
+{
+    return strcmp(a, b) == 0;
 }
