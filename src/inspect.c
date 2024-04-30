@@ -46,9 +46,14 @@ int main(int argc, char *argv[])
         logMsg(logBuffer);
     }
 
-    if (stat(fileName, &fileInfo) != 0) 
+    if (fileName == NULL)
     {
-        fprintf(stderr, "Error getting file info for %s: %s\n", argv[1], strerror(errno));
+        fprintf(stderr, "No file dictated for inspecting\n");
+        exit(1);
+    }
+    else if (stat(fileName, &fileInfo) != 0) 
+    {
+        fprintf(stderr, "Error getting file info for %s: %s\n", fileName, strerror(errno));
         exit(1);
     }
     
@@ -62,7 +67,20 @@ int main(int argc, char *argv[])
 
 void help(int argc, char * argv[])
 {
-    printf("%s: %s [-? | -i <file_path> | -a [directory_path]] [-a | -f [text|json]] [-l]\n", argv[0], argv[0]);
+
+    printf("inspect: inspect [-? | -i <file_path> | -a [directory_path]] [-h]              \n");
+    printf("             [-f [text|json]] [-l <log_file_path>]                             \n");
+    printf("    -?              Prints this message                                        \n");
+    printf("    -i --inode      Dictates the file whose inode information is displayed     \n");
+    printf("    -a --all        Dictates that all files in the directory will have their   \n");
+    printf("                    inode information printed                                  \n");
+    printf("    -r              Subflag of the \"-a\" flag. Recursively prints all files in\n");
+    printf("                    all folders of the directory                               \n");
+    printf("    -h --human      Prints inode information in a human-readable format        \n");
+    printf("    -f --format     Dictates the format of the output                          \n");
+    printf("    -f --log        Enables the program to log its execution to the designated \n");
+    printf("                    log file                                                   \n");
+    
 }
 
 void argsHandler(int argc, char * argv[])
@@ -73,15 +91,26 @@ void argsHandler(int argc, char * argv[])
     }
     else if (argc == 2)
     {
-        format = FORMAT_TEXT;
-        selectionMode = SELECTION_SINGLE;
-        fileName = argv[1];
+        if (checkForFlags(argv[1]))
+        {
+            if (strcmp(argv[1], "-?") == 0)
+            {
+                logMsg("    help flag detected\n");
+                help(argc, argv); 
+                exit(0);
+            }
+        }
+        else
+        {
+            format = FORMAT_TEXT;
+            selectionMode = SELECTION_SINGLE;
+            fileName = argv[1];            
+        }
     }
     else
     {
         strcat(logBuffer, "  Handling program arguments\n");
         format = FORMAT_TEXT;
-        fileName = argv[0];
         
         for (int i = 1; i < argc; i++)
         {
@@ -96,14 +125,13 @@ void argsHandler(int argc, char * argv[])
                         strcmp(argv[i], "--inode") == 0)
             {
                 logMsg("    inode flag detected\n");
-             
                 selectionMode = SELECTION_SINGLE;
                 if (i + 1 < argc)
                 {
                     if (checkForFlags(argv[i+1]))
                     {
                         logMsg("      detected flag immediately after \"-i\"");
-                        
+                        printf("Detected flag in fileName position post \"-i\" / \"--inode\"\n");
                     }
                     else
                     {
@@ -114,7 +142,6 @@ void argsHandler(int argc, char * argv[])
                 else
                 {
                     printf("      no file after inode flag\n");
-                    
                 }
             } 
             else if (strcmp(argv[i], "-a") == 0)
@@ -278,6 +305,7 @@ void printJson()
 
 int setupLogFile()
 {
+    
     logFile = fopen(logFileName, "w+");
     logMsg("log initialization start\n");
     if (logFile == NULL)
@@ -295,13 +323,13 @@ int setupLogFile()
 
 int checkForFlags(char * arg)
 {
-    return  1 &&    !(  strcmp(arg, "-i")   ||  strcmp(arg, "--inode")  ||
-                        strcmp(arg, "-?")   ||  strcmp(arg, "--help")   ||
-                        strcmp(arg, "-a")   ||  strcmp(arg, "--all")    ||
-                        strcmp(arg, "-h")   ||  strcmp(arg, "--human")  ||
-                        strcmp(arg, "-f")   ||  strcmp(arg, "--format") ||
-                        strcmp(arg, "-l")   ||  strcmp(arg, "--log")    
-                    );
+    return  !(  strcmp(arg, "-i")   ||  strcmp(arg, "--inode")  ||
+                strcmp(arg, "-?")   ||  strcmp(arg, "--help")   ||
+                strcmp(arg, "-a")   ||  strcmp(arg, "--all")    ||
+                strcmp(arg, "-h")   ||  strcmp(arg, "--human")  ||
+                strcmp(arg, "-f")   ||  strcmp(arg, "--format") ||
+                strcmp(arg, "-l")   ||  strcmp(arg, "--log")    
+            );
 }
 
 void logMsg(char * msg)
