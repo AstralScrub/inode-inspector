@@ -153,60 +153,26 @@ void printText()
     printf("Information for %s:\n", fileName);
     printf("File Inode: %lu\n", fileInfo.st_ino);
     printf("Premission: ");
-    if(S_IRUSR&fileInfo.st_mode)
-        printf("r");
-    else
-        printf("-");
-    if(S_IWUSR&fileInfo.st_mode)
-        printf("w");
-    else
-        printf("-");
-    if(S_IXUSR&fileInfo.st_mode)
-        printf("x");
-    else
-        printf("-");
-    if(S_IRGRP&fileInfo.st_mode)
-        printf("r");
-    else
-        printf("-");
-    if(S_IRGRP&fileInfo.st_mode)
-        printf("w");
-    else
-        printf("-");
-    if(S_IRGRP&fileInfo.st_mode)
-        printf("x");
-    else
-        printf("-");
-    if(S_IROTH&fileInfo.st_mode)
-        printf("r");
-    else
-        printf("-");
-    if(S_IROTH&fileInfo.st_mode)
-        printf("w");
-    else
-        printf("-");
-    if(S_IROTH&fileInfo.st_mode)
-        printf("x");
-    else
-        printf("-");
-    printf("\n");
+        if(S_IRUSR&fileInfo.st_mode)    printf("r");    else    printf("-");
+        if(S_IWUSR&fileInfo.st_mode)    printf("w");    else    printf("-");
+        if(S_IXUSR&fileInfo.st_mode)    printf("x");    else    printf("-");
+        if(S_IRGRP&fileInfo.st_mode)    printf("r");    else    printf("-");
+        if(S_IRGRP&fileInfo.st_mode)    printf("w");    else    printf("-");
+        if(S_IRGRP&fileInfo.st_mode)    printf("x");    else    printf("-");
+        if(S_IROTH&fileInfo.st_mode)    printf("r");    else    printf("-");
+        if(S_IROTH&fileInfo.st_mode)    printf("w");    else    printf("-");
+        if(S_IROTH&fileInfo.st_mode)    printf("x");    else    printf("-");
+        printf("\n");
     printf("File Type: ");
-    if (S_ISREG(fileInfo.st_mode))
-        printf("regular file\n");
-    else if (S_ISDIR(fileInfo.st_mode))
-        printf("directory\n");
-    else if (S_ISCHR(fileInfo.st_mode))
-        printf("character device\n");
-    else if (S_ISBLK(fileInfo.st_mode))
-        printf("block device\n");
-    else if (S_ISFIFO(fileInfo.st_mode))
-        printf("FIFO (named pipe)\n");
-    else if (S_ISLNK(fileInfo.st_mode))
-        printf("symbolic link\n");
-    else if (S_ISSOCK(fileInfo.st_mode))
-        printf("socket\n");
-    else
-        printf("unknown?\n");
+        if (S_ISREG(fileInfo.st_mode))          printf("regular file");
+        else if (S_ISDIR(fileInfo.st_mode))     printf("directory");
+        else if (S_ISCHR(fileInfo.st_mode))     printf("character device");
+        else if (S_ISBLK(fileInfo.st_mode))     printf("block device");
+        else if (S_ISFIFO(fileInfo.st_mode))    printf("FIFO (named pipe)");
+        else if (S_ISLNK(fileInfo.st_mode))     printf("symbolic link");
+        else if (S_ISSOCK(fileInfo.st_mode))    printf("socket");
+        else                                    printf("unknown?");
+        printf("\n");
     printf("Number of Hard Links: %lu\n", fileInfo.st_nlink);
     printf("File Size: %lu bytes\n", fileInfo.st_size);
     printf("Last Access Time: %ld\n", fileInfo.st_atime);
@@ -221,22 +187,15 @@ void printJson()
     printf("\t\"inode\": {\n");
     printf("\t\t\"number\":           %lu,\n", fileInfo.st_ino);
     printf("\t\t\"type\":             \"");
-        if (S_ISREG(fileInfo.st_mode))
-            printf("regular file\",\n");
-        else if (S_ISDIR(fileInfo.st_mode))
-            printf("directory\",\n");
-        else if (S_ISCHR(fileInfo.st_mode))
-            printf("character device\",\n");
-        else if (S_ISBLK(fileInfo.st_mode))
-            printf("block device\",\n");
-        else if (S_ISFIFO(fileInfo.st_mode))
-            printf("FIFO (named pipe)\",\n");
-        else if (S_ISLNK(fileInfo.st_mode))
-            printf("symbolic link\",\n");
-        else if (S_ISSOCK(fileInfo.st_mode))
-            printf("socket\",\n");
-        else
-            printf("unknown?\",\n");
+        if (S_ISREG(fileInfo.st_mode))          printf("regular file");
+        else if (S_ISDIR(fileInfo.st_mode))     printf("directory");
+        else if (S_ISCHR(fileInfo.st_mode))     printf("character device");
+        else if (S_ISBLK(fileInfo.st_mode))     printf("block device");
+        else if (S_ISFIFO(fileInfo.st_mode))    printf("FIFO (named pipe)");
+        else if (S_ISLNK(fileInfo.st_mode))     printf("symbolic link");
+        else if (S_ISSOCK(fileInfo.st_mode))    printf("socket");
+        else                                    printf("unknown?");
+        printf("\",\n");
     printf("\t\t\"permissions\":      \"");
         if(S_IRUSR&fileInfo.st_mode)    printf("r");    else    printf("-");
         if(S_IWUSR&fileInfo.st_mode)    printf("w");    else    printf("-");
